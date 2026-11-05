@@ -1,0 +1,1 @@
+// Page Object do módulo sorteado (SEM expect interno)
