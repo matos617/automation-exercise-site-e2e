@@ -1,1 +1,0 @@
-// 1 CT E2E no site externo escolhido

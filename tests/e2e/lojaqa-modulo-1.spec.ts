@@ -1,4 +1,4 @@
-// 1 CT E2E no site externo escolhido
+// Testes de API da Loja QA ({ request })
 
 import { test, expect } from '../../fixtures/auth.fixture';
 
