@@ -43,7 +43,9 @@ export class CatalogoPage {
   // ---------- Navegação e espera ----------
 
   async goto(): Promise<void> {
-    await this.page.goto(URL_LOJA);
+    // "#catalogo" faz o navegador abrir já rolado até a vitrine (busca, filtros e produtos
+    // ficam visíveis no trace, no vídeo e no modo --headed).
+    await this.page.goto(`${URL_LOJA}#catalogo`);
   }
 
   /**
