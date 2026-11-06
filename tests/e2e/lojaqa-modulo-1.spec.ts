@@ -1,4 +1,4 @@
-// Testes de API da Loja QA ({ request })
+// Testes E2E da Loja QA: Catálogo, Busca & Filtros (sem login ou cadastro)
 
 import { test, expect } from '../../fixtures/auth.fixture';
 
@@ -10,6 +10,9 @@ const buscasSemResultado = [
 ];
 
 test('Catálogo, Busca & Filtros', async ({ catalogoPage }) => {
+  // Todas as etapas dividem o mesmo tempo limite (padrão: 30s) e a API do Render é lenta.
+  test.setTimeout(120_000);
+
   const totalProdutos = await catalogoPage.cards.count();
 
   await test.step('exibe produtos e o resumo ao abrir a vitrine', async () => {
@@ -69,6 +72,60 @@ test('Catálogo, Busca & Filtros', async ({ catalogoPage }) => {
       expect(preco).toBeLessThanOrEqual(limite);
     }
     await catalogoPage.limparFiltros();
+  });
+
+  // As etapas abaixo ficam ANTES da fronteira: ela falha de propósito (bug do "<") e,
+  // num teste único, a primeira falha interrompe as etapas seguintes.
+
+  await test.step('caminho feliz: busca + categoria + preço máximo juntos encontram o produto', async () => {
+    const [nome] = await catalogoPage.obterNomes();
+    const [categoria] = await catalogoPage.obterCategoriasDosCards();
+    const [preco] = await catalogoPage.obterPrecos();
+    const limite = Math.ceil(preco) + 1; // folga: não depende do "<" vs "<=" do preço máximo
+
+    await catalogoPage.buscar(nome);
+    await catalogoPage.filtrarPorCategoria(categoria);
+    await catalogoPage.limitarPreco(limite);
+
+    await expect(catalogoPage.cardPorNome(nome)).toBeVisible();
+    for (const categoriaDoCard of await catalogoPage.obterCategoriasDosCards()) {
+      expect(categoriaDoCard).toBe(categoria);
+    }
+    for (const precoDoCard of await catalogoPage.obterPrecos()) {
+      expect(precoDoCard).toBeLessThanOrEqual(limite);
+    }
+    const quantidade = await catalogoPage.cards.count();
+    await expect(catalogoPage.resumo).toHaveText(`${quantidade} produto(s) encontrado(s)`);
+
+    await catalogoPage.limparFiltros();
+    await expect(catalogoPage.cards).toHaveCount(totalProdutos);
+  });
+
+  await test.step('caminho negativo: produto buscado numa categoria que não é a dele não aparece', async () => {
+    const [nome] = await catalogoPage.obterNomes();
+    const [categoriaDoProduto] = await catalogoPage.obterCategoriasDosCards();
+    const categorias = await catalogoPage.obterCategorias();
+    const outraCategoria = categorias.find((categoria) => categoria !== categoriaDoProduto);
+    if (!outraCategoria) throw new Error('O teste precisa de pelo menos 2 categorias na vitrine.');
+
+    await catalogoPage.buscar(nome);
+    await catalogoPage.filtrarPorCategoria(outraCategoria);
+
+    await expect(catalogoPage.cardPorNome(nome)).toBeHidden();
+    await catalogoPage.limparFiltros();
+  });
+
+  await test.step('caminho negativo: preço máximo menor que qualquer produto não retorna resultado', async () => {
+    // Nenhum produto da loja custa até R$ 1.
+    await catalogoPage.limitarPreco(1);
+
+    await expect(catalogoPage.estadoVazio).toHaveText(
+      'Nenhum produto encontrado para os filtros atuais.',
+    );
+    await expect(catalogoPage.resumo).toHaveText('0 produto(s) encontrado(s)');
+
+    await catalogoPage.limparFiltros();
+    await expect(catalogoPage.cards).toHaveCount(totalProdutos);
   });
 
   // Valor de fronteira: "preço máximo" deveria incluir o produto cujo preço é IGUAL ao limite.
