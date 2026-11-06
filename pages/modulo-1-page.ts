@@ -71,11 +71,23 @@ export class CatalogoPage {
     await this.aguardarCatalogo();
   }
 
+  /**
+   * Volta os filtros ao padrão. Cada filtro dispara uma consulta própria à API,
+   * então limpamos um de cada vez e esperamos a resposta de cada um. Se limpasse
+   * os três de uma vez, a espera terminaria na 1ª resposta e o teste leria uma
+   * lista desatualizada.
+   */
   async limparFiltros(): Promise<void> {
-    await this.campoBusca.fill('');
-    await this.filtroCategoria.selectOption('');
-    await this.campoPrecoMaximo.fill('');
-    await this.aguardarCatalogo();
+    if ((await this.campoBusca.inputValue()) !== '') {
+      await this.buscar('');
+    }
+    if ((await this.filtroCategoria.inputValue()) !== '') {
+      await this.filtrarPorCategoria('Todas');
+    }
+    if ((await this.campoPrecoMaximo.inputValue()) !== '') {
+      await this.campoPrecoMaximo.fill('');
+      await this.aguardarCatalogo();
+    }
   }
 
   // ---------- Leituras (devolvem dados; quem confere é o teste) ----------
