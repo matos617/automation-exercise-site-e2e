@@ -17,6 +17,8 @@ const isCI = Boolean(
  */
 export default defineConfig({
   testDir: './tests',
+  /* Tempo limite de cada teste: a API do Render pode demorar no 1º acesso. */
+  timeout: 60_000,
   /* Run tests in files in parallel */
   fullyParallel: true,
   /* Fail the build on CI if you accidentally left test.only in the source code. */

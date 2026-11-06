@@ -2,37 +2,32 @@
 
 import { test, expect } from '../../fixtures/auth.fixture';
 
-// Cada cenário é uma etapa do mesmo teste para reutilizar a mesma página.
+// Data-driven: cada item vira um teste separado no relatório
 const buscasSemResultado = [
   { descricao: 'texto aleatório', termo: 'zzzxxxqqq' },
   { descricao: 'só números longos', termo: '123456789012345' },
   { descricao: 'produto inexistente', termo: 'produto-que-nao-existe' },
 ];
 
-test('Catálogo, Busca & Filtros', async ({ catalogoPage }) => {
-  // Todas as etapas dividem o mesmo tempo limite (padrão: 30s) e a API do Render é lenta.
-  test.setTimeout(120_000);
-
-  const totalProdutos = await catalogoPage.cards.count();
-
-  await test.step('exibe produtos e o resumo ao abrir a vitrine', async () => {
+// Cada teste é independente
+test.describe('Catálogo, Busca & Filtros', () => {
+  test('exibe produtos e o resumo ao abrir a vitrine', async ({ catalogoPage }) => {
     await expect(catalogoPage.cards.first()).toBeVisible();
 
     const quantidade = await catalogoPage.cards.count();
     await expect(catalogoPage.resumo).toHaveText(`${quantidade} produto(s) encontrado(s)`);
   });
 
-  await test.step('busca por nome retorna o produto procurado', async () => {
+  test('busca por nome retorna o produto procurado', async ({ catalogoPage }) => {
     const [nome] = await catalogoPage.obterNomes();
 
     await catalogoPage.buscar(nome);
 
     await expect(catalogoPage.cardPorNome(nome)).toBeVisible();
-    await catalogoPage.limparFiltros();
   });
 
   for (const { descricao, termo } of buscasSemResultado) {
-    await test.step(`busca sem resultado: ${descricao}`, async () => {
+    test(`busca sem resultado: ${descricao}`, async ({ catalogoPage }) => {
       await catalogoPage.buscar(termo);
 
       await expect(catalogoPage.estadoVazio).toHaveText(
@@ -42,12 +37,17 @@ test('Catálogo, Busca & Filtros', async ({ catalogoPage }) => {
     });
   }
 
-  await test.step('limpar a busca restaura a lista completa', async () => {
+  test('limpar a busca restaura a lista completa', async ({ catalogoPage }) => {
+    const totalProdutos = await catalogoPage.cards.count();
+
+    await catalogoPage.buscar('zzzxxxqqq');
+    await expect(catalogoPage.estadoVazio).toBeVisible();
+
     await catalogoPage.limparFiltros();
     await expect(catalogoPage.cards).toHaveCount(totalProdutos);
   });
 
-  await test.step('filtro de categoria mostra só produtos da categoria escolhida', async () => {
+  test('filtro de categoria mostra só produtos da categoria escolhida', async ({ catalogoPage }) => {
     const [categoria] = await catalogoPage.obterCategorias();
 
     await catalogoPage.filtrarPorCategoria(categoria);
@@ -57,10 +57,9 @@ test('Catálogo, Busca & Filtros', async ({ catalogoPage }) => {
     for (const categoriaDoCard of categoriasDosCards) {
       expect(categoriaDoCard).toBe(categoria);
     }
-    await catalogoPage.limparFiltros();
   });
 
-  await test.step('preço máximo não exibe produtos acima do limite', async () => {
+  test('preço máximo não exibe produtos acima do limite', async ({ catalogoPage }) => {
     const precos = await catalogoPage.obterPrecos();
     const ordenados = [...precos].sort((a, b) => a - b);
     const limite = ordenados[Math.floor(ordenados.length / 2)];
@@ -71,13 +70,12 @@ test('Catálogo, Busca & Filtros', async ({ catalogoPage }) => {
     for (const preco of precosFiltrados) {
       expect(preco).toBeLessThanOrEqual(limite);
     }
-    await catalogoPage.limparFiltros();
   });
 
-  // As etapas abaixo ficam ANTES da fronteira: ela falha de propósito (bug do "<") e,
-  // num teste único, a primeira falha interrompe as etapas seguintes.
-
-  await test.step('caminho feliz: busca + categoria + preço máximo juntos encontram o produto', async () => {
+  test('caminho feliz: busca + categoria + preço máximo juntos encontram o produto', async ({
+    catalogoPage,
+  }) => {
+    const totalProdutos = await catalogoPage.cards.count();
     const [nome] = await catalogoPage.obterNomes();
     const [categoria] = await catalogoPage.obterCategoriasDosCards();
     const [preco] = await catalogoPage.obterPrecos();
@@ -101,7 +99,9 @@ test('Catálogo, Busca & Filtros', async ({ catalogoPage }) => {
     await expect(catalogoPage.cards).toHaveCount(totalProdutos);
   });
 
-  await test.step('caminho negativo: produto buscado numa categoria que não é a dele não aparece', async () => {
+  test('caminho negativo: produto buscado numa categoria que não é a dele não aparece', async ({
+    catalogoPage,
+  }) => {
     const [nome] = await catalogoPage.obterNomes();
     const [categoriaDoProduto] = await catalogoPage.obterCategoriasDosCards();
     const categorias = await catalogoPage.obterCategorias();
@@ -112,10 +112,11 @@ test('Catálogo, Busca & Filtros', async ({ catalogoPage }) => {
     await catalogoPage.filtrarPorCategoria(outraCategoria);
 
     await expect(catalogoPage.cardPorNome(nome)).toBeHidden();
-    await catalogoPage.limparFiltros();
   });
 
-  await test.step('caminho negativo: preço máximo menor que qualquer produto não retorna resultado', async () => {
+  test('caminho negativo: preço máximo menor que qualquer produto não retorna resultado', async ({
+    catalogoPage,
+  }) => {
     // Nenhum produto da loja custa até R$ 1.
     await catalogoPage.limitarPreco(1);
 
@@ -123,13 +124,13 @@ test('Catálogo, Busca & Filtros', async ({ catalogoPage }) => {
       'Nenhum produto encontrado para os filtros atuais.',
     );
     await expect(catalogoPage.resumo).toHaveText('0 produto(s) encontrado(s)');
-
-    await catalogoPage.limparFiltros();
-    await expect(catalogoPage.cards).toHaveCount(totalProdutos);
   });
 
   // Valor de fronteira: "preço máximo" deveria incluir o produto cujo preço é IGUAL ao limite.
-  await test.step('preço máximo inclui o produto com preço igual ao limite', async () => {
+  // Falha hoje por um bug do site (usa "<" em vez de "<="). Esse é o defeito encontrado.
+  test('BUG: preço máximo inclui o produto com preço igual ao limite', async ({ catalogoPage }) => {
+    // test.fail(); // descomente para marcar como bug conhecido e deixar o relatório verde
+
     const nomes = await catalogoPage.obterNomes();
     const precos = await catalogoPage.obterPrecos();
     const indiceMaisBarato = precos.indexOf(Math.min(...precos));
