@@ -243,7 +243,7 @@ Prints para incluir (salvar em `docs/img/`):
 
 ## 9. Testes de API
 
-> Seção a ser completada pela dupla com os casos de `tests/api/` (Loja QA: `GET /api/products?search=Teclado` com busca parcial; e 1 CT de API em um serviço externo), incluindo os comandos de execução e os prints de status code e JSON no console.
+> [Seção a ser completada pela dupla com os casos de `tests/api/` (Loja QA: `GET /api/products?search=Teclado` com busca parcial; e 1 CT de API em um serviço externo), incluindo os comandos de execução e os prints de status code e JSON no console](https://github.com/joaoalberto61/toolshop-automacao-banca/tree/main).
 
 ---
 
