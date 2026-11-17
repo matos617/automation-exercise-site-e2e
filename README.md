@@ -6,8 +6,8 @@ Disciplina: Teste de Software com Playwright · Prof. Alison Melo · Turma FAP 2
 | | |
 |---|---|
 | **Módulo sorteado** | 01: Catálogo & Busca em Tempo Real (Loja QA) |
-| **Integrantes** | [Nome do integrante A] (testes E2E) · [Nome do integrante B] (testes de API) |
-| **Apresentação** | 17/11/2026, 08h30 |
+| **Integrantes** | Carla Beatriz Matos (testes E2E) · João Alberto (testes de API) |
+| **Apresentação** | 17/11/2026 |
 | **Stack** | Playwright · TypeScript · Page Object Model · Fixtures |
 
 ## Sumário
