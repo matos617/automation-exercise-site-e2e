@@ -19,11 +19,12 @@ const CLIENTE = {
 const PRODUTO = 'Combination Pliers';
 
 const ENDERECO = {
-  rua: 'Rua das Flores, 123',
+  pais: 'Brazil', // o campo é uma lista (select); o texto precisa ser igual ao da opção
+  cep: '53000-000',
+  numero: '123',
+  rua: 'Rua das Flores',
   cidade: 'Olinda',
   estado: 'PE',
-  pais: 'Brazil',
-  cep: '53000-000',
 };
 
 // Cartão fictício no formato que o formulário aceita. A validade é calculada
@@ -87,12 +88,17 @@ test.describe('Toolshop (site externo)', () => {
       await expect(page.getByText(/you are already logged in/i)).toBeVisible();
       await page.getByTestId('proceed-2').click();
 
-      await page.getByTestId('street').fill(ENDERECO.rua);
-      await page.getByTestId('city').fill(ENDERECO.cidade);
-      await page.getByTestId('state').fill(ENDERECO.estado);
-      await page.getByTestId('country').fill(ENDERECO.pais);
-      await page.getByTestId('postal_code').fill(ENDERECO.cep);
-      await page.getByTestId('proceed-3').click();
+      // Ordem da tela: país, CEP e número vêm primeiro (o site usa os três para
+      // sugerir o resto do endereço); depois rua, cidade e estado.
+      await page.getByRole('combobox', { name: 'Country' }).selectOption({ label: ENDERECO.pais });
+      await page.getByRole('textbox', { name: 'Postal code' }).fill(ENDERECO.cep);
+      await page.getByRole('textbox', { name: 'House number' }).fill(ENDERECO.numero);
+      await page.getByRole('textbox', { name: 'Street' }).fill(ENDERECO.rua);
+      await page.getByRole('textbox', { name: 'City' }).fill(ENDERECO.cidade);
+      await page.getByRole('textbox', { name: 'State' }).fill(ENDERECO.estado);
+
+      // O botão fica desabilitado até o formulário estar válido; o clique espera isso.
+      await page.getByRole('button', { name: 'Proceed to checkout' }).click();
     });
 
     await test.step('6. Pagar com cartão de crédito', async () => {
