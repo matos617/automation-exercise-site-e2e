@@ -201,22 +201,6 @@ Matriz completa, com dados de entrada, em [`docs/matriz-de-testes.md`](docs/matr
 productsToRender = productsToRender.filter(p => p.price < maxPriceVal);
 ```
 
-### Divergências e observações
-
-| ID | Observação | Situação |
-|---|---|---|
-| OBS-01 | O escopo do módulo fala em "busca com debounce", mas em `loja.js` o campo de busca chama `loadCatalog` direto no evento `input`: sem atraso e sem cancelar a requisição anterior. Resultado: uma consulta por tecla e risco de respostas fora de ordem. | Divergência a confirmar com o professor. Os testes usam `fill` (um único evento) e aguardam a vitrine carregar, por isso não ficam instáveis. |
-| OBS-02 | O filtro de preço é aplicado duas vezes: a API recebe `maxPrice` e o front-end filtra de novo a lista recebida. A tela pode divergir do que a API devolve. | A confirmar nos testes de API (comparar `GET /products?maxPrice=X` com a tela). |
-
-### Toolshop
-
-**Nenhum defeito do site foi encontrado no fluxo testado.** Os problemas abaixo foram da automação, descobertos na primeira execução e corrigidos:
-
-| Problema | Causa | Correção |
-|---|---|---|
-| `locator.fill` falhou no campo "country" | O campo é uma lista (`<select>`), não um campo de texto | `selectOption({ label: 'Brazil' })` |
-| O formulário de endereço tinha um campo a mais ("House number") e o botão ficava desabilitado até o formulário ser válido | O layout atual difere do descrito em tutoriais públicos | Localizadores por `getByRole` com os nomes da tela; ordem de preenchimento igual à da página |
-
 ---
 
 ## 8. Resultados e evidências
