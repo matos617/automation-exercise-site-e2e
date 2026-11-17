@@ -19,7 +19,7 @@ Disciplina: Teste de Software com Playwright · Prof. Alison Melo · Turma FAP 2
 5. [Arquitetura e boas práticas](#5-arquitetura-e-boas-práticas)
 6. [Casos de teste E2E](#6-casos-de-teste-e2e)
 7. [Erros encontrados](#7-erros-encontrados)
-8. [Resultados](#8-resultados-e-evidências)
+8. [Resultados](#8-resultados)
 9. [Testes de API](#9-testes-de-api)
 10. [Lições aprendidas](#10-lições-aprendidas)
 
@@ -206,22 +206,6 @@ productsToRender = productsToRender.filter(p => p.price < maxPriceVal);
 ## 8. Resultados
 
 **Resultado esperado de uma execução completa dos E2E:** 16 testes aprovados no relatório (15 da Loja QA, sendo o CT-E2E-13 uma falha esperada registrada com `test.fail()`, e 1 do Toolshop).
-
-Prints para incluir (salvar em `docs/img/`):
-
-| Evidência | Arquivo sugerido |
-|---|---|
-| Terminal com a execução dos E2E da Loja QA | `docs/img/lojaqa-execucao.png` |
-| Relatório HTML (`npx playwright show-report`) | `docs/img/relatorio-html.png` |
-| CT-E2E-13 mostrando o defeito (anotação e/ou trace) | `docs/img/bug-01-preco-maximo.png` |
-| Toolshop: tela "Thanks for your order! Your invoice number is INV-..." | `docs/img/toolshop-confirmacao.png` |
-
-<!-- Depois de salvar os prints, descomente:
-![Execução dos E2E da Loja QA](docs/img/lojaqa-execucao.png)
-![Relatório HTML](docs/img/relatorio-html.png)
-![BUG-01](docs/img/bug-01-preco-maximo.png)
-![Confirmação do pedido no Toolshop](docs/img/toolshop-confirmacao.png)
--->
 
 ---
 
