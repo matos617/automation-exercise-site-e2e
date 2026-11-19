@@ -79,16 +79,10 @@ lojaqa-automacao-banca/
 ├── fixtures/
 │   └── auth.fixture.ts               # Fixture catalogoPage: abre e aguarda a vitrine
 ├── tests/
-│   ├── e2e/
-│   │   ├── lojaqa-modulo-1.spec.ts   # 13 CTs E2E da Loja QA (15 testes)
-│   │   └── externo-e2e.spec.ts       # 1 CT E2E no Toolshop
-│   └── api/
-│       ├── lojaqa-api-1.spec.ts      # testes de API da Loja QA
-│       └── externo-api.spec.ts       # 1 CT de API no serviço externo
-├── docs/
-│   ├── matriz-de-testes.md           # matriz usada no slide 3
-│   ├── roteiro-de-fala.md            # roteiro da apresentação
-│   └── img/                          # prints usados neste README
+│   └── e2e/
+│       ├── lojaqa-modulo-1.spec.ts   # 13 CTs E2E da Loja QA (15 testes)
+│       └── externo-e2e.spec.ts       # 1 CT E2E no Toolshop
+│   
 ├── presentation/
 │   └── apresentacao-slides.pdf
 ├── playwright.config.ts
