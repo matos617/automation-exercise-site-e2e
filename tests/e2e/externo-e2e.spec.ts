@@ -1,6 +1,6 @@
 // CT E2E externo: Practice Software Testing, Toolshop v5.0 (https://practicesoftwaretesting.com)
 // CT-EXT-E2E-01: cliente cadastrado compra um produto e paga com cartão de crédito.
-// CT-EXT-E2E-02 a 10: catálogo e buscas (busca por nome, busca sem resultado, filtro por categoria, ordenação).
+// CT-EXT-E2E-02 a 15: catálogo e buscas, sem login. Felizes: busca, filtro, ordenação. Tristes: sem resultado, busca vazia/só espaços, XSS, SQL injection, produto inexistente.
 
 import { test, expect, type Page } from '@playwright/test';
 
@@ -38,7 +38,7 @@ const CARTAO = {
 };
 
 test.describe('Toolshop (site externo)', () => {
-  test('CT-EXT-E2E-01: cliente compra um produto e paga com cartão de crédito', async ({
+  test('CT-EXT-E2E-01: [Feliz] cliente compra um produto e paga com cartão de crédito', async ({
     page,
   }) => {
     await test.step('1. Entrar com uma conta de cliente', async () => {
@@ -152,7 +152,7 @@ test.describe('Toolshop (site externo) - Catálogo e Buscas', () => {
     await aguardarListagem(page);
   });
 
-  test('CT-EXT-E2E-02: busca por nome mostra apenas produtos correspondentes', async ({ page }) => {
+  test('CT-EXT-E2E-02: [Feliz] busca por nome mostra apenas produtos correspondentes', async ({ page }) => {
     await page.getByTestId('search-query').fill('pliers');
     await page.getByTestId('search-submit').click();
 
@@ -167,7 +167,7 @@ test.describe('Toolshop (site externo) - Catálogo e Buscas', () => {
     }).toPass();
   });
 
-  test('CT-EXT-E2E-03: busca por termo inexistente mostra mensagem de nenhum produto', async ({
+  test('CT-EXT-E2E-03: [Triste] busca por termo inexistente mostra mensagem de nenhum produto', async ({
     page,
   }) => {
     await page.getByTestId('search-query').fill('zzzxxxqqq');
@@ -178,7 +178,7 @@ test.describe('Toolshop (site externo) - Catálogo e Buscas', () => {
     await expect(page.getByTestId('product-name')).toHaveCount(0);
   });
 
-  test('CT-EXT-E2E-04: abrir um produto a partir do resultado da busca', async ({ page }) => {
+  test('CT-EXT-E2E-04: [Feliz] abrir um produto a partir do resultado da busca', async ({ page }) => {
     await page.getByTestId('search-query').fill(PRODUTO);
     await page.getByTestId('search-submit').click();
 
@@ -190,7 +190,7 @@ test.describe('Toolshop (site externo) - Catálogo e Buscas', () => {
     await expect(page.getByTestId('add-to-cart')).toBeVisible();
   });
 
-  test('CT-EXT-E2E-05: filtrar por categoria (Hammer) mostra apenas martelos', async ({ page }) => {
+  test('CT-EXT-E2E-05: [Feliz] filtrar por categoria (Hammer) mostra apenas martelos', async ({ page }) => {
     await page.getByLabel('Hammer', { exact: true }).check();
 
     await expect(async () => {
@@ -205,7 +205,7 @@ test.describe('Toolshop (site externo) - Catálogo e Buscas', () => {
     await expect(page.getByTestId('product-name').filter({ hasText: PRODUTO })).toHaveCount(0);
   });
 
-  test('CT-EXT-E2E-06: remover o filtro de categoria volta a listar outros produtos', async ({
+  test('CT-EXT-E2E-06: [Feliz] remover o filtro de categoria volta a listar outros produtos', async ({
     page,
   }) => {
     const filtro = page.getByLabel('Hammer', { exact: true });
@@ -224,7 +224,7 @@ test.describe('Toolshop (site externo) - Catálogo e Buscas', () => {
     }).toPass();
   });
 
-  test('CT-EXT-E2E-07: ordenar por nome (A-Z) deixa a listagem em ordem alfabética', async ({
+  test('CT-EXT-E2E-07: [Feliz] ordenar por nome (A-Z) deixa a listagem em ordem alfabética', async ({
     page,
   }) => {
     await page.getByTestId('sort').selectOption('name,asc');
@@ -236,7 +236,7 @@ test.describe('Toolshop (site externo) - Catálogo e Buscas', () => {
     }).toPass();
   });
 
-  test('CT-EXT-E2E-08: ordenar por preço crescente', async ({ page }) => {
+  test('CT-EXT-E2E-08: [Feliz] ordenar por preço crescente', async ({ page }) => {
     await page.getByTestId('sort').selectOption('price,asc');
 
     await expect(async () => {
@@ -246,7 +246,7 @@ test.describe('Toolshop (site externo) - Catálogo e Buscas', () => {
     }).toPass();
   });
 
-  test('CT-EXT-E2E-09: ordenar por preço decrescente', async ({ page }) => {
+  test('CT-EXT-E2E-09: [Feliz] ordenar por preço decrescente', async ({ page }) => {
     await page.getByTestId('sort').selectOption('price,desc');
 
     await expect(async () => {
@@ -256,7 +256,7 @@ test.describe('Toolshop (site externo) - Catálogo e Buscas', () => {
     }).toPass();
   });
 
-  test('CT-EXT-E2E-10: filtro por categoria combinado com ordenação por preço', async ({ page }) => {
+  test('CT-EXT-E2E-10: [Feliz] filtro por categoria combinado com ordenação por preço', async ({ page }) => {
     await page.getByLabel('Hammer', { exact: true }).check();
     await page.getByTestId('sort').selectOption('price,asc');
 
@@ -267,5 +267,71 @@ test.describe('Toolshop (site externo) - Catálogo e Buscas', () => {
       expect(nomes.every((n) => /hammer/i.test(n))).toBe(true);
       expect(precos).toEqual([...precos].sort((a, b) => a - b));
     }).toPass();
+  });
+
+  // -------------------------------------------------------------------------
+  // Caminhos tristes: entradas inválidas ou hostis de propósito.
+  // O sistema deve reagir sem quebrar, sem executar código e sem vazar resultados.
+  // -------------------------------------------------------------------------
+
+  test('CT-EXT-E2E-11: [Triste] busca vazia não quebra a página', async ({ page }) => {
+    await page.getByTestId('search-query').fill('');
+    await page.getByTestId('search-submit').click();
+
+    // Aceita os dois comportamentos legítimos: voltar a listar produtos ou avisar que não há resultado.
+    await expect(
+      page.getByTestId('product-name').or(page.getByText(/no products found/i)).first(),
+    ).toBeVisible();
+    await expect(page.getByTestId('search-query')).toBeVisible();
+  });
+
+  test('CT-EXT-E2E-12: [Triste] busca só com espaços não quebra a página', async ({
+    page,
+  }) => {
+    await page.getByTestId('search-query').fill('     ');
+    await page.getByTestId('search-submit').click();
+
+    await expect(
+      page.getByTestId('product-name').or(page.getByText(/no products found/i)).first(),
+    ).toBeVisible();
+    await expect(page.getByTestId('search-query')).toBeVisible();
+  });
+
+  test('CT-EXT-E2E-13: [Triste] tentativa de XSS na busca é tratada como texto', async ({
+    page,
+  }) => {
+    let dialogAberto = false;
+    page.on('dialog', async (dialog) => {
+      dialogAberto = true;
+      await dialog.dismiss();
+    });
+
+    const termo = '<script>alert(1)</script>';
+    await page.getByTestId('search-query').fill(termo);
+    await page.getByTestId('search-submit').click();
+
+    await expect(page.getByText(/no products found/i)).toBeVisible();
+    await expect(page.getByTestId('search-caption')).toContainText(termo);
+    expect(dialogAberto).toBe(false);
+  });
+
+  test('CT-EXT-E2E-14: [Triste] tentativa de SQL injection na busca não lista tudo', async ({
+    page,
+  }) => {
+    await page.getByTestId('search-query').fill("' OR 1=1 --");
+    await page.getByTestId('search-submit').click();
+
+    await expect(page.getByText(/no products found/i)).toBeVisible();
+    await expect(page.getByTestId('product-name')).toHaveCount(0);
+  });
+
+  test('CT-EXT-E2E-15: [Triste] produto inexistente na URL não mostra página de produto', async ({
+    page,
+  }) => {
+    await page.goto(`${URL_SITE}/product/00000000000000000000000000`);
+    await page.waitForLoadState('networkidle');
+
+    await expect(page.getByTestId('add-to-cart')).toHaveCount(0);
+    await expect(page.getByTestId('unit-price')).toHaveCount(0);
   });
 });
