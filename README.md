@@ -6,8 +6,8 @@ Disciplina: Teste de Software com Playwright · Prof. Alison Melo · Turma FAP 2
 | | |
 |---|---|
 | **Módulo sorteado** | 01: Catálogo & Busca em Tempo Real (Loja QA) |
-| **Integrantes** | Carla Beatriz Matos (testes E2E) · João Alberto (testes de API) |
-| **Apresentação** | 17/11/2026 |
+| **Integrantes** | [Nome do integrante A] (testes E2E) · [Nome do integrante B] (testes de API) |
+| **Apresentação** | 17/11/2026, 08h30 |
 | **Stack** | Playwright · TypeScript · Page Object Model · Fixtures |
 
 ## Sumário
@@ -19,7 +19,7 @@ Disciplina: Teste de Software com Playwright · Prof. Alison Melo · Turma FAP 2
 5. [Arquitetura e boas práticas](#5-arquitetura-e-boas-práticas)
 6. [Casos de teste E2E](#6-casos-de-teste-e2e)
 7. [Erros encontrados](#7-erros-encontrados)
-8. [Resultados](#8-resultados)
+8. [Resultados e evidências](#8-resultados-e-evidências)
 9. [Testes de API](#9-testes-de-api)
 10. [Lições aprendidas](#10-lições-aprendidas)
 
@@ -30,7 +30,7 @@ Disciplina: Teste de Software com Playwright · Prof. Alison Melo · Turma FAP 2
 O repositório reúne a automação apresentada na banca:
 
 - **Testes E2E do módulo 01 da Loja QA** (interface gráfica, sem login ou cadastro): 13 casos de teste, que viram 15 testes no relatório porque a busca sem resultado é data-driven.
-- **1 caso de teste E2E em um site de mercado** (Toolshop): compra completa, do login à fatura.
+- **1 caso de teste E2E em um site de mercado** (Toolshop), no mesmo cenário **Catálogo e Buscas**: busca parcial, página do produto e busca sem resultado, sem login.
 - **Testes de API** da Loja QA e de um serviço externo (ver [seção 9](#9-testes-de-api)).
 
 As regras da banca foram seguidas: o módulo de Login não é foco de nenhum teste da Loja QA, os E2E rodam com `--headed`, o Page Object não tem `expect` e não há `waitForTimeout`.
@@ -64,9 +64,9 @@ As regras da banca foram seguidas: o módulo de Login não é foco de nenhum tes
 |---|---|
 | **Site** | https://practicesoftwaretesting.com (Practice Software Testing, Toolshop) |
 | **O que é** | Loja de ferramentas de demonstração, criada para treinar teste de software e automação (Angular) |
-| **Conta usada** | Conta pública de demonstração do próprio site: `customer@practicesoftwaretesting.com` / `welcome01` |
+| **Login** | Não é necessário: o catálogo e a busca são públicos |
 
-**Fluxo automatizado:** login → busca por "Combination Pliers" → página do produto → carrinho → login confirmado e endereço de cobrança → pagamento com cartão de crédito → confirmação do pedido com número da fatura (`INV-...`).
+**Cenário automatizado: Catálogo e Buscas**, o mesmo tema do módulo 01 da Loja QA. Fluxo: catálogo com produtos → busca por parte do nome ("Combination") → página do produto "Combination Pliers" → busca sem resultado (`zzzxxxqqq`) com a mensagem de vazio.
 
 ---
 
@@ -79,9 +79,16 @@ lojaqa-automacao-banca/
 ├── fixtures/
 │   └── auth.fixture.ts               # Fixture catalogoPage: abre e aguarda a vitrine
 ├── tests/
-│   └── e2e/
-│       ├── lojaqa-modulo-1.spec.ts   # 13 CTs E2E da Loja QA (15 testes)
-│       └── externo-e2e.spec.ts       # 1 CT E2E no Toolshop
+│   ├── e2e/
+│   │   ├── lojaqa-modulo-1.spec.ts   # 13 CTs E2E da Loja QA (15 testes)
+│   │   └── externo-e2e.spec.ts       # 1 CT E2E no Toolshop
+│   └── api/
+│       ├── lojaqa-api-1.spec.ts      # testes de API da Loja QA
+│       └── externo-api.spec.ts       # 1 CT de API no serviço externo
+├── docs/
+│   ├── matriz-de-testes.md           # matriz usada no slide 3
+│   ├── roteiro-de-fala.md            # roteiro da apresentação
+│   └── img/                          # prints usados neste README
 ├── presentation/
 │   └── apresentacao-slides.pdf
 ├── playwright.config.ts
@@ -162,17 +169,14 @@ Matriz completa, com dados de entrada, em [`docs/matriz-de-testes.md`](docs/matr
 
 ### 6.2 Toolshop (`tests/e2e/externo-e2e.spec.ts`)
 
-**CT-EXT-E2E-01: cliente compra um produto e paga com cartão de crédito**
+**CT-EXT-E2E-01: busca parcial, página do produto e busca sem resultado** (cenário Catálogo e Buscas)
 
 | Passo | Ação | Resultado esperado |
 |---|---|---|
-| 1 | Entrar com a conta de cliente | Vai para `/account` e exibe o título "My account" |
-| 2 | Buscar "Combination Pliers" e abrir o produto | Título da página e cabeçalho com o nome do produto; preço lido da página |
-| 3 | Adicionar ao carrinho | O contador do carrinho mostra 1 |
-| 4 | Abrir o carrinho | A linha do produto aparece com o mesmo preço da página do produto |
-| 5 | Avançar, confirmar o login e preencher o endereço | Mensagem de que já está logado; país, CEP, número, rua, cidade e estado aceitos |
-| 6 | Pagar com cartão de crédito | Mensagem "Payment was successful" |
-| 7 | Finalizar o pedido | "Thanks for your order! Your invoice number is INV-..." |
+| 1 | Abrir o catálogo | Há mais de um produto listado e o primeiro nome já tem texto |
+| 2 | Buscar por parte do nome (`Combination`) | A lista é filtrada (menos cards que no catálogo inteiro) e "Combination Pliers" aparece |
+| 3 | Abrir "Combination Pliers" | Título da página e cabeçalho com o nome; preço no formato `0.00`; botão "Add to cart" habilitado |
+| 4 | Voltar ao catálogo e buscar `zzzxxxqqq` | Mensagem de que não há produtos e nenhum card listado |
 
 ---
 
@@ -201,17 +205,44 @@ Matriz completa, com dados de entrada, em [`docs/matriz-de-testes.md`](docs/matr
 productsToRender = productsToRender.filter(p => p.price < maxPriceVal);
 ```
 
+### Divergências e observações
+
+| ID | Observação | Situação |
+|---|---|---|
+| OBS-01 | O escopo do módulo fala em "busca com debounce", mas em `loja.js` o campo de busca chama `loadCatalog` direto no evento `input`: sem atraso e sem cancelar a requisição anterior. Resultado: uma consulta por tecla e risco de respostas fora de ordem. | Divergência a confirmar com o professor. Os testes usam `fill` (um único evento) e aguardam a vitrine carregar, por isso não ficam instáveis. |
+| OBS-02 | O filtro de preço é aplicado duas vezes: a API recebe `maxPrice` e o front-end filtra de novo a lista recebida. A tela pode divergir do que a API devolve. | A confirmar nos testes de API (comparar `GET /products?maxPrice=X` com a tela). |
+
+### Toolshop
+
+**Nenhum defeito do site foi encontrado no fluxo testado.**
+
+Decisão de projeto: a primeira versão deste caso era uma compra completa com login. A conta pública de demonstração do site é compartilhada e passou a exibir "Account locked, too many failed attempts" (o site bloqueia a conta depois de muitas tentativas de login erradas), o que derrubava o teste por motivo alheio ao nosso código. Como o cenário do nosso módulo é Catálogo e Buscas, redesenhamos o caso para esse mesmo tema, que é público e não depende de conta.
+
 ---
 
-## 8. Resultados
+## 8. Resultados e evidências
 
 **Resultado esperado de uma execução completa dos E2E:** 16 testes aprovados no relatório (15 da Loja QA, sendo o CT-E2E-13 uma falha esperada registrada com `test.fail()`, e 1 do Toolshop).
+
+Prints para incluir (salvar em `docs/img/`):
+
+| Evidência | Arquivo sugerido |
+|---|---|
+| Terminal com a execução dos E2E da Loja QA | `docs/img/lojaqa-execucao.png` |
+| Relatório HTML (`npx playwright show-report`) | `docs/img/relatorio-html.png` |
+| CT-E2E-13 mostrando o defeito (anotação e/ou trace) | `docs/img/bug-01-preco-maximo.png` |
+| Toolshop: resultado da busca parcial e página do produto | `docs/img/toolshop-busca.png` |
+
+<!-- Depois de salvar os prints, descomente:
+![Execução dos E2E da Loja QA](docs/img/lojaqa-execucao.png)
+![Relatório HTML](docs/img/relatorio-html.png)
+![BUG-01](docs/img/bug-01-preco-maximo.png)
+![Busca no Toolshop](docs/img/toolshop-busca.png)
+-->
 
 ---
 
 ## 9. Testes de API
-
-> [Seção a ser completada pela dupla com os casos de `tests/api/` (Loja QA: `GET /api/products?search=Teclado` com busca parcial; e 1 CT de API em um serviço externo), incluindo os comandos de execução e os prints de status code e JSON no console](https://github.com/joaoalberto61/toolshop-automacao-banca/tree/main).
 
 ---
 
@@ -220,5 +251,5 @@ productsToRender = productsToRender.filter(p => p.price < maxPriceVal);
 - **Esperar por estado, não por tempo.** Observar o "Carregando vitrine..." sumir deixou os testes estáveis mesmo com a API lenta no primeiro acesso.
 - **Page Object sem `expect`** mantém a leitura dos testes limpa e deixa claro o que cada teste confere.
 - **Valores de fronteira revelam defeitos reais:** o BUG-01 só apareceu ao testar o preço exatamente igual ao limite.
-- **Sites de mercado mudam.** O layout do Toolshop era diferente do descrito em tutoriais; o `error-context.md` que o Playwright gera na falha mostrou a tela real, e localizadores por role/label tornaram o teste mais resistente.
+- **Não dependa de estado compartilhado.** Contas públicas de demonstração podem ser bloqueadas por outras pessoas; por isso o caso do Toolshop usa só funcionalidades públicas (catálogo e busca). O `error-context.md` que o Playwright gera na falha mostrou a causa (conta bloqueada) em segundos.
 - **Falha esperada documentada** (`test.fail()`) mantém o relatório verde sem esconder o defeito.
