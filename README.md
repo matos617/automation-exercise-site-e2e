@@ -6,8 +6,8 @@ Disciplina: Teste de Software com Playwright · Prof. Alison Melo · Turma FAP 2
 | | |
 |---|---|
 | **Módulo sorteado** | 01: Catálogo & Busca em Tempo Real (Loja QA) |
-| **Integrantes** | [Nome do integrante A] (testes E2E) · [Nome do integrante B] (testes de API) |
-| **Apresentação** | 17/11/2026, 08h30 |
+| **Integrantes** | [Carla Beatriz] (testes E2E) · [João Alberto] (testes de API) |
+| **Apresentação** | 19/11/2026, 09h |
 | **Stack** | Playwright · TypeScript · Page Object Model · Fixtures |
 
 ## Sumário
@@ -30,7 +30,7 @@ Disciplina: Teste de Software com Playwright · Prof. Alison Melo · Turma FAP 2
 O repositório reúne a automação apresentada na banca:
 
 - **Testes E2E do módulo 01 da Loja QA** (interface gráfica, sem login ou cadastro): 13 casos de teste, que viram 15 testes no relatório porque a busca sem resultado é data-driven.
-- **1 caso de teste E2E em um site de mercado** (Toolshop), no mesmo cenário **Catálogo e Buscas**: busca parcial, página do produto e busca sem resultado, sem login.
+- **15 testes E2E em um site de mercado** (Toolshop), no mesmo cenário **Catálogo e Buscas**, sem login: o CT-EXT-E2E-01 (busca parcial, página do produto e busca sem resultado) e 14 casos novos (CT-EXT-E2E-02 a 15). Os casos cobrem **caminhos felizes** (busca, filtro por categoria, ordenação) e **caminhos tristes** (entradas inválidas ou hostis de propósito).
 - **Testes de API** da Loja QA e de um serviço externo (ver [seção 9](#9-testes-de-api)).
 
 As regras da banca foram seguidas: o módulo de Login não é foco de nenhum teste da Loja QA, os E2E rodam com `--headed`, o Page Object não tem `expect` e não há `waitForTimeout`.
@@ -68,6 +68,13 @@ As regras da banca foram seguidas: o módulo de Login não é foco de nenhum tes
 
 **Cenário automatizado: Catálogo e Buscas**, o mesmo tema do módulo 01 da Loja QA. Fluxo: catálogo com produtos → busca por parte do nome ("Combination") → página do produto "Combination Pliers" → busca sem resultado (`zzzxxxqqq`) com a mensagem de vazio.
 
+**Casos adicionais do cenário (CT-EXT-E2E-02 a 15):**
+
+- **Busca:** por nome (`pliers`), abertura de produto a partir do resultado e termo inexistente.
+- **Filtro:** categoria `Hammer`, remoção do filtro e filtro combinado com ordenação por preço.
+- **Ordenação:** nome A-Z, preço crescente e preço decrescente.
+- **Caminhos tristes:** busca vazia, busca só com espaços, tentativa de XSS, tentativa de SQL injection e URL de produto inexistente.
+
 ---
 
 ## 3. Estrutura do repositório
@@ -81,7 +88,7 @@ lojaqa-automacao-banca/
 ├── tests/
 │   └── e2e/
 │       ├── lojaqa-modulo-1.spec.ts   # 13 CTs E2E da Loja QA (15 testes)
-│       └── externo-e2e.spec.ts       # 1 CT E2E no Toolshop
+│       └── externo-e2e.spec.ts       # 15 testes E2E no Toolshop (CT-EXT-E2E-01 a 15)
 │   
 ├── presentation/
 │   └── apresentacao-slides.pdf
@@ -105,6 +112,7 @@ npx playwright install
 |---|---|
 | E2E da Loja QA, com o navegador à vista | `npx playwright test tests/e2e/lojaqa-modulo-1.spec.ts --headed` |
 | E2E do Toolshop, com o navegador à vista | `npx playwright test tests/e2e/externo-e2e.spec.ts --headed` |
+| Só os caminhos tristes do Toolshop | `npx playwright test tests/e2e/externo-e2e.spec.ts --headed -g "\[Triste\]"` |
 | Todos os E2E | `npx playwright test tests/e2e` |
 | Só alguns casos (por ID) | `npx playwright test tests/e2e/lojaqa-modulo-1.spec.ts --headed -g "CT-E2E-(03\|06a\|10\|13)"` |
 | Abrir o relatório HTML | `npx playwright show-report` |
@@ -130,7 +138,9 @@ $env:SLOW_MO=300; npx playwright test tests/e2e/lojaqa-modulo-1.spec.ts --headed
 - **Seletores semânticos.** `getByRole` (`searchbox`, `combobox`, `spinbutton`, `article`, `heading`), `getByText` e `getByTitle`. Só a categoria do card usa CSS (`.product-category`), porque o HTML não oferece role nem texto fixo. No Toolshop, `getByTestId` com `testIdAttribute: 'data-test'` e `getByRole` nas telas em que o nome acessível é confiável.
 - **Sem `waitForTimeout`.** A espera é por estado: `aguardarCatalogo()` aguarda o texto "Carregando vitrine..." sair do DOM após cada ação. Nas verificações, usamos asserções web-first (`toBeVisible`, `toHaveText`, `toHaveCount`), que repetem até passar; as comparações de listas só acontecem depois que a vitrine terminou de carregar.
 - **Data-driven.** A busca sem resultado roda com três massas (texto aleatório, números longos e produto inexistente); cada uma vira um teste no relatório.
-- **Testes independentes.** Cada teste recebe a vitrine do zero pela fixture.
+- **Testes independentes.** Cada teste recebe a vitrine do zero pela fixture. No Toolshop, o `beforeEach` abre a home e espera a listagem carregar.
+- **Caminho feliz e caminho triste.** No Toolshop, o título de cada teste traz a marca `[Feliz]` ou `[Triste]`. Os tristes provocam o erro de propósito (busca vazia, só espaços, XSS, SQL injection, URL inexistente) e conferem que o site reage sem quebrar, sem executar código e sem listar resultados indevidos.
+- **Espera por estado também no Toolshop.** Os cards aparecem antes de os dados chegarem, então as conferências de lista (nomes e preços) usam `expect(async () => { ... }).toPass()`, que repete até a listagem estabilizar, sem `waitForTimeout`.
 - **Defeito registrado como falha esperada.** O CT-E2E-13 usa `test.fail()` com a descrição do bug: o relatório fica verde e, no dia em que o defeito for corrigido, o teste avisa que passou.
 - **Configuração para a banca (`playwright.config.ts`).** Timeout de 90 s (API no Render), um worker (um navegador só no `--headed`), trace/vídeo/print apenas em falha e `SLOW_MO` opcional.
 - **TypeScript tipado**, sem `any` explícito.
@@ -172,6 +182,27 @@ Matriz completa, com dados de entrada, em [`docs/matriz-de-testes.md`](docs/matr
 | 3 | Abrir "Combination Pliers" | Título da página e cabeçalho com o nome; preço no formato `0.00`; botão "Add to cart" habilitado |
 | 4 | Voltar ao catálogo e buscar `zzzxxxqqq` | Mensagem de que não há produtos e nenhum card listado |
 
+**CT-EXT-E2E-02 a 15: busca, filtro, ordenação e caminhos tristes** (cenário Catálogo e Buscas, sem login)
+
+| ID | Caminho | Cenário | Resultado esperado |
+|---|---|---|---|
+| CT-EXT-E2E-02 | Feliz | Busca por nome (`pliers`) | Legenda "Searched for: pliers" e só produtos com "pliers" no nome |
+| CT-EXT-E2E-03 | Triste | Busca por termo inexistente (`zzzxxxqqq`) | Legenda com o termo, mensagem de nenhum produto encontrado e nenhum card |
+| CT-EXT-E2E-04 | Feliz | Abrir um produto a partir do resultado da busca | URL `/product/`, cabeçalho "Combination Pliers", preço e botão "Add to cart" visíveis |
+| CT-EXT-E2E-05 | Feliz | Filtro de categoria `Hammer` | Só aparecem martelos e "Combination Pliers" não aparece |
+| CT-EXT-E2E-06 | Feliz | Marcar e desmarcar o filtro `Hammer` | Com o filtro, só martelos; sem o filtro, voltam produtos de outras categorias |
+| CT-EXT-E2E-07 | Feliz | Ordenar por nome (A-Z) | Nomes em ordem alfabética |
+| CT-EXT-E2E-08 | Feliz | Ordenar por preço crescente | Preços em ordem crescente |
+| CT-EXT-E2E-09 | Feliz | Ordenar por preço decrescente | Preços em ordem decrescente |
+| CT-EXT-E2E-10 | Feliz | Filtro `Hammer` + ordenação por preço crescente | Só martelos, em ordem crescente de preço |
+| CT-EXT-E2E-11 | Triste | Busca vazia | A página não quebra: volta a listar produtos ou avisa que não há resultado |
+| CT-EXT-E2E-12 | Triste | Busca só com espaços | A página não quebra: volta a listar produtos ou avisa que não há resultado |
+| CT-EXT-E2E-13 | Triste | Tentativa de XSS (`<script>alert(1)</script>`) | O termo aparece como texto na legenda, nenhum `alert` é aberto e a mensagem de nenhum produto aparece |
+| CT-EXT-E2E-14 | Triste | Tentativa de SQL injection (`' OR 1=1 --`) | Mensagem de nenhum produto e nenhum card (a busca não lista tudo) |
+| CT-EXT-E2E-15 | Triste | URL de produto inexistente (`/product/00000000000000000000000000`) | Não aparecem botão "Add to cart" nem preço |
+
+> Nos casos 11 e 12 o site pode legitimamente voltar a listar tudo ou mostrar a mensagem de vazio; o teste aceita os dois comportamentos e só garante que a página não quebra.
+
 ---
 
 ## 7. Erros encontrados
@@ -208,7 +239,7 @@ productsToRender = productsToRender.filter(p => p.price < maxPriceVal);
 
 ### Toolshop
 
-**Nenhum defeito do site foi encontrado no fluxo testado.**
+**Nenhum defeito do site foi encontrado no fluxo do CT-EXT-E2E-01.** Os casos CT-EXT-E2E-02 a 15 (filtro, ordenação e caminhos tristes) ainda precisam ser executados para confirmar o resultado; qualquer falha deve ser registrada aqui.
 
 Decisão de projeto: a primeira versão deste caso era uma compra completa com login. A conta pública de demonstração do site é compartilhada e passou a exibir "Account locked, too many failed attempts" (o site bloqueia a conta depois de muitas tentativas de login erradas), o que derrubava o teste por motivo alheio ao nosso código. Como o cenário do nosso módulo é Catálogo e Buscas, redesenhamos o caso para esse mesmo tema, que é público e não depende de conta.
 
@@ -216,7 +247,7 @@ Decisão de projeto: a primeira versão deste caso era uma compra completa com l
 
 ## 8. Resultados e evidências
 
-**Resultado esperado de uma execução completa dos E2E:** 16 testes aprovados no relatório (15 da Loja QA, sendo o CT-E2E-13 uma falha esperada registrada com `test.fail()`, e 1 do Toolshop).
+**Resultado esperado de uma execução completa dos E2E:** 30 testes aprovados no relatório (15 da Loja QA, sendo o CT-E2E-13 uma falha esperada registrada com `test.fail()`, e 15 do Toolshop).
 
 Prints para incluir (salvar em `docs/img/`):
 
@@ -226,12 +257,16 @@ Prints para incluir (salvar em `docs/img/`):
 | Relatório HTML (`npx playwright show-report`) | `docs/img/relatorio-html.png` |
 | CT-E2E-13 mostrando o defeito (anotação e/ou trace) | `docs/img/bug-01-preco-maximo.png` |
 | Toolshop: resultado da busca parcial e página do produto | `docs/img/toolshop-busca.png` |
+| Toolshop: filtro `Hammer` e ordenação por preço | `docs/img/toolshop-filtro-ordenacao.png` |
+| Toolshop: caminhos tristes (relatório filtrado por `[Triste]`) | `docs/img/toolshop-caminhos-tristes.png` |
 
 <!-- Depois de salvar os prints, descomente:
 ![Execução dos E2E da Loja QA](docs/img/lojaqa-execucao.png)
 ![Relatório HTML](docs/img/relatorio-html.png)
 ![BUG-01](docs/img/bug-01-preco-maximo.png)
 ![Busca no Toolshop](docs/img/toolshop-busca.png)
+![Filtro e ordenação no Toolshop](docs/img/toolshop-filtro-ordenacao.png)
+![Caminhos tristes no Toolshop](docs/img/toolshop-caminhos-tristes.png)
 -->
 
 ---
